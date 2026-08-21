@@ -1,0 +1,1319 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>LackProGrok — Karma Läcksök Pro v9.0 ULTIMATE</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+<script src="https://cdn.sheetjs.com/xlsx-0.20.2/package/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+:root {
+  --bg: #0a0a0c;
+  --card: #121216;
+  --card2: #1a1a22;
+  --border: #22222a;
+  --text: #fff;
+  --muted: #8a8a95;
+  --green: #1db954;
+  --red: #dc2626;
+  --orange: #f97316;
+  --yellow: #eab308;
+  --blue: #38bdf8;
+  --purple: #a78bfa;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  font-size: 13px;
+  line-height: 1.4;
+}
+header {
+  background: var(--card);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  flex-wrap: wrap;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+}
+header h1 {
+  font-size: 18px;
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--green), var(--blue));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  white-space: nowrap;
+}
+header .ver { font-size: 11px; color: var(--muted); margin-left: 4px; }
+.toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-left: auto; }
+.btn {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 6px 12px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 12px;
+  transition: all .15s;
+}
+.btn:hover { border-color: var(--green); background: #122012; }
+.btn.primary { background: var(--green); color: #000; border-color: var(--green); font-weight: 600; }
+.btn.primary:hover { background: #22c55e; }
+.layout { display: flex; min-height: calc(100vh - 56px); }
+.sidebar {
+  width: 220px;
+  background: var(--card);
+  border-right: 1px solid var(--border);
+  padding: 12px;
+  overflow-y: auto;
+  flex-shrink: 0;
+}
+.sidebar h3 {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+  margin: 12px 0 6px;
+}
+.sidebar h3:first-child { margin-top: 0; }
+.chip {
+  display: inline-block;
+  padding: 3px 8px;
+  border-radius: 50px;
+  font-size: 11px;
+  border: 1px solid var(--border);
+  margin: 2px 2px 2px 0;
+  cursor: pointer;
+  background: transparent;
+  color: var(--muted);
+  transition: all .12s;
+  user-select: none;
+}
+.chip.on {
+  background: #1e1e2e;
+  color: #fff;
+  border-color: #666;
+}
+.chip:hover { border-color: #888; }
+.main { flex: 1; padding: 16px; overflow-x: auto; }
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+.stat {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-left: 4px solid var(--muted);
+  border-radius: 8px;
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: all .15s;
+}
+.stat:hover { background: var(--card2); }
+.stat.active {
+  outline: 2px solid var(--green);
+  background: #122012;
+}
+.stat .num { font-size: 22px; font-weight: 700; line-height: 1.1; }
+.stat .lbl { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; margin-top: 2px; }
+.stat.s-all { border-left-color: var(--blue); }
+.stat.s-aktiv { border-left-color: var(--red); }
+.stat.s-bevaka { border-left-color: var(--orange); }
+.stat.s-misst { border-left-color: var(--yellow); }
+.stat.s-vp { border-left-color: var(--purple); }
+.stat.s-dolda { border-left-color: #555; }
+.drop {
+  border: 2px dashed var(--border);
+  border-radius: 10px;
+  padding: 28px 20px;
+  text-align: center;
+  color: var(--muted);
+  margin-bottom: 16px;
+  transition: all .2s;
+  background: var(--card);
+}
+.drop.drag { border-color: var(--green); background: #0d1a12; color: var(--green); }
+.drop p { margin: 4px 0; }
+.file-info { font-size: 12px; color: var(--green); margin-top: 6px; }
+.search-row {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+#q {
+  flex: 1;
+  min-width: 200px;
+  background: var(--card);
+  border: 1px solid var(--border);
+  color: var(--text);
+  padding: 8px 12px;
+  border-radius: 6px;
+  font-size: 13px;
+}
+#q:focus { outline: none; border-color: var(--green); }
+.range-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--muted);
+  flex-wrap: wrap;
+}
+.range-wrap input[type=range] { width: 90px; accent-color: var(--green); }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 11px;
+  background: var(--card);
+  border-radius: 8px;
+  overflow: hidden;
+}
+th {
+  background: var(--card2);
+  text-transform: uppercase;
+  font-size: 9px;
+  letter-spacing: .06em;
+  color: var(--muted);
+  padding: 8px 6px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+  position: sticky;
+  top: 0;
+}
+td {
+  padding: 6px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+tr:hover td { background: #15151c; }
+.row-akut { border-left: 4px solid var(--red); }
+.row-aktiv { border-left: 4px solid var(--red); }
+.row-bevaka { border-left: 4px solid var(--orange); }
+.row-misstankt { border-left: 4px solid var(--yellow); }
+.row-vp { border-left: 4px solid var(--purple); }
+.row-temp { border-left: 4px solid #64748b; }
+.row-lagad { border-left: 4px solid #22c55e; }
+.row-storing { border-left: 4px solid #555; }
+.row-normal { border-left: 4px solid #333; }
+.row-kund { border-left: 4px solid #06b6d4; }
+.row-dry { border-left: 4px solid #94a3b8; }
+.badge {
+  display: inline-block;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.badge-akut, .badge-aktiv { background: #3f1212; color: #fca5a5; }
+.badge-bevaka { background: #3f2a12; color: #fdba74; }
+.badge-misstankt { background: #3f3a12; color: #fde047; }
+.badge-vp { background: #2e1a4a; color: #c4b5fd; }
+.badge-temp { background: #1e293b; color: #94a3b8; }
+.badge-lagad { background: #122012; color: #86efac; }
+.badge-storing { background: #1a1a1a; color: #888; }
+.badge-normal { background: #1a1a1a; color: #666; }
+.badge-kund { background: #0c2a2e; color: #67e8f9; }
+.badge-dry { background: #1e293b; color: #cbd5e1; }
+.conf {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  border-radius: 3px;
+  font-size: 9px;
+  font-weight: 700;
+  margin-left: 4px;
+}
+.conf-H { background: var(--green); color: #000; }
+.conf-M { background: var(--yellow); color: #000; }
+.conf-L { background: #555; color: #fff; }
+.copy-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  padding: 2px 4px;
+  opacity: .6;
+}
+.copy-btn:hover { opacity: 1; }
+.star { cursor: pointer; font-size: 14px; opacity: .4; }
+.star.on { opacity: 1; }
+.why { color: var(--muted); font-size: 10px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nl-box {
+  background: #3f1212;
+  color: #fca5a5;
+  font-size: 9px;
+  padding: 2px 5px;
+  border-radius: 3px;
+  margin-top: 2px;
+  display: inline-block;
+}
+.memo-tag {
+  background: #1e293b;
+  color: var(--blue);
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: 3px;
+  margin-left: 4px;
+  cursor: pointer;
+}
+.spark { vertical-align: middle; cursor: pointer; }
+.section-title {
+  font-size: 12px;
+  font-weight: 600;
+  margin: 16px 0 8px;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+/* Modals */
+.modal {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,.75);
+  z-index: 1000;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+.modal .box {
+  background: var(--card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  max-width: 900px;
+  width: 100%;
+  max-height: 90vh;
+  overflow: auto;
+  padding: 20px;
+  position: relative;
+}
+.modal .close {
+  position: absolute;
+  top: 12px;
+  right: 14px;
+  background: none;
+  border: none;
+  color: var(--muted);
+  font-size: 22px;
+  cursor: pointer;
+}
+.modal h2 { font-size: 16px; margin-bottom: 8px; padding-right: 30px; }
+.g-meta { font-size: 11px; color: var(--muted); margin-bottom: 12px; line-height: 1.6; }
+.g-meta b { color: var(--text); }
+#gInfo { font-size: 13px; margin-bottom: 10px; }
+#map { height: 480px; border-radius: 8px; background: #111; }
+.m-status { font-size: 11px; color: var(--muted); margin-bottom: 8px; }
+select.cat-sel {
+  background: var(--card2);
+  border: 1px solid var(--border);
+  color: var(--text);
+  font-size: 10px;
+  padding: 2px 4px;
+  border-radius: 4px;
+  max-width: 90px;
+}
+.empty {
+  text-align: center;
+  padding: 40px;
+  color: var(--muted);
+}
+@media (max-width: 800px) {
+  .sidebar { width: 160px; }
+  .stats { grid-template-columns: repeat(2, 1fr); }
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>LackProGrok <span class="ver">v9.0 ULTIMATE</span></h1>
+  <div class="toolbar">
+    <button class="btn primary" id="upBtn">📂 Ladda filer</button>
+    <input type="file" id="fileIn" multiple accept=".xlsx,.xls,.csv" style="display:none">
+    <button class="btn" id="anBtn">⚡ Analysera</button>
+    <button class="btn" id="mapBtn">🗺 Karta</button>
+    <button class="btn" id="expBtn">📥 Export XLSX</button>
+    <button class="btn" id="clrBtn">🗑 Rensa</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside class="sidebar">
+    <h3>Kategori</h3>
+    <div id="fCats"></div>
+    <h3>Konfidens</h3>
+    <div id="fConf"></div>
+    <h3>Område</h3>
+    <div id="fArea"></div>
+  </aside>
+
+  <main class="main">
+    <div class="drop" id="drop">
+      <p>📂 Släpp Filtrerade mätare här</p>
+      <p style="font-size:11px">(idag + mån/tis/ons förra veckan + äldre för 3-års historik)</p>
+      <div class="file-info" id="fileInfo">Inga filer laddade</div>
+    </div>
+
+    <div class="stats" id="stats">
+      <div class="stat s-all active" data-f="all"><div class="num">0</div><div class="lbl">Skarpa mätare</div></div>
+      <div class="stat s-aktiv" data-f="aktiv"><div class="num">0</div><div class="lbl">Aktiva läckor</div></div>
+      <div class="stat s-bevaka" data-f="bevaka"><div class="num">0</div><div class="lbl">Bevaka hög misstanke</div></div>
+      <div class="stat s-misst" data-f="misstankt"><div class="num">0</div><div class="lbl">Misstänkta</div></div>
+      <div class="stat s-vp" data-f="vp"><div class="num">0</div><div class="lbl">Värmepump (säsong)</div></div>
+      <div class="stat s-dolda" data-f="dolda"><div class="num">0</div><div class="lbl">Dolda / Lagade</div></div>
+    </div>
+
+    <div class="search-row">
+      <input type="text" id="q" placeholder="🔍 Sök adress, serienr (CRUSEBJÖRNS VÄG 11 etc)">
+      <div class="range-wrap">
+        <span>Från</span>
+        <input type="range" id="rFrom" min="0" max="100" value="0">
+        <span>Till</span>
+        <input type="range" id="rTo" min="0" max="100" value="100">
+        <span id="rangeLabel">Dra slider för datumintervall</span>
+      </div>
+    </div>
+
+    <div class="section-title" id="secBevaka" style="display:none">Bevaka — hög misstanke</div>
+    <table id="tbBevaka" style="display:none"><thead><tr>
+      <th></th><th>Klass</th><th>Adress</th><th>Serienr</th><th>Område</th><th>E</th><th>F</th><th>Avvik%</th><th>Ratio</th><th>Max</th><th>Trend</th>
+    </tr></thead><tbody></tbody></table>
+
+    <div class="section-title" id="secMain">Resultat</div>
+    <table id="tb"><thead><tr>
+      <th></th><th>Klass</th><th>Adress</th><th>Serienr</th><th>Område</th><th>E</th><th>F</th><th>Avvik%</th><th>Ratio</th><th>Max</th><th>Trend</th>
+    </tr></thead><tbody></tbody></table>
+
+    <div class="section-title" id="secNoise" style="display:none">Dolda / VP / Störning / Lagade</div>
+    <table id="tbNoise" style="display:none"><thead><tr>
+      <th></th><th>Klass</th><th>Adress</th><th>Serienr</th><th>Område</th><th>E</th><th>F</th><th>Avvik%</th><th>Ratio</th><th>Max</th><th>Trend</th>
+    </tr></thead><tbody></tbody></table>
+  </main>
+</div>
+
+<!-- Graph Modal -->
+<div class="modal" id="gModal">
+  <div class="box">
+    <button class="close" onclick="document.getElementById('gModal').style.display='none'">×</button>
+    <h2 id="gT">Graf</h2>
+    <div id="gInfo"></div>
+    <div class="g-meta" id="gMeta"></div>
+    <canvas id="gChart" height="280"></canvas>
+  </div>
+</div>
+
+<!-- Map Modal -->
+<div class="modal" id="mModal">
+  <div class="box" style="max-width:1000px">
+    <button class="close" onclick="document.getElementById('mModal').style.display='none'">×</button>
+    <h2>Karta — högriskmätare</h2>
+    <div class="m-status" id="mStatus"></div>
+    <div id="map"></div>
+  </div>
+</div>
+
+<script>
+// ============== STATE ==============
+let uploaded = [];
+let results = [];
+let ignored = new Set();
+let starred = new Set();
+let userCats = new Map();
+let memos = new Map();
+let catChecks = new Map();
+let confFilter = new Set(['H','M','L']);
+let areaFilter = new Set();
+let activeFilter = 'all';
+let map = null;
+let markers = [];
+let chartInst = null;
+
+const CATS = {
+  akut:   { label: 'AKUT BURST', bg: '#dc2626', cls: 'akut' },
+  aktiv:  { label: 'AKTIV LÄCKA', bg: '#ef4444', cls: 'aktiv' },
+  bevaka: { label: 'BEVAKA', bg: '#f97316', cls: 'bevaka' },
+  misstankt: { label: 'MISSTÄNKT', bg: '#eab308', cls: 'misstankt' },
+  vp:     { label: 'VÄRMEPUMP', bg: '#a78bfa', cls: 'vp' },
+  temp:   { label: 'TILLFÄLLIGT', bg: '#64748b', cls: 'temp' },
+  lagad:  { label: 'LAGAD', bg: '#22c55e', cls: 'lagad' },
+  storing: { label: 'STÖRNING', bg: '#555', cls: 'storing' },
+  normal: { label: 'NORMAL', bg: '#333', cls: 'normal' },
+  kund:   { label: 'KUND LEAK', bg: '#06b6d4', cls: 'kund' },
+  dry:    { label: 'DRY', bg: '#94a3b8', cls: 'dry' },
+  reverse:{ label: 'REVERSE', bg: '#78716c', cls: 'storing' }
+};
+
+const AREAS = ['TULLINGE','NORSBORG','TUMBA','GRÖDINGE','UTTRAN','ÖVRIGT'];
+
+// ============== HELPERS ==============
+function parseNum(v) {
+  if (v == null || v === '') return null;
+  const n = parseFloat(String(v).replace(',', '.').replace(/[^0-9.\-]/g, ''));
+  return isNaN(n) ? null : n;
+}
+
+function extractDate(s) {
+  if (!s) return null;
+  const m = String(s).match(/(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return new Date(+m[1], +m[2]-1, +m[3]);
+  return null;
+}
+
+function cleanAddr(a) {
+  if (!a) return '';
+  return String(a)
+    .replace(/\b\d{5}\b/g, '')
+    .replace(/\b(TULLINGE|TUMBA|NORSBORG|GRÖDINGE|UTTRAN|STOCKHOLM|HUDDINGE|BOTKYRKA)\b/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toUpperCase();
+}
+
+function areaOf(a) {
+  const u = String(a || '').toUpperCase();
+  for (const ar of ['TULLINGE','NORSBORG','TUMBA','GRÖDINGE','UTTRAN']) {
+    if (u.includes(ar)) return ar;
+  }
+  return 'ÖVRIGT';
+}
+
+function median(arr) {
+  if (!arr.length) return 0;
+  const s = [...arr].sort((a,b) => a-b);
+  return s[Math.floor(s.length / 2)];
+}
+
+function sparkline(hist) {
+  if (!hist || hist.length < 2) return '';
+  const vals = hist.map(h => h.E).filter(v => v != null);
+  if (vals.length < 2) return '';
+  const w = 60, h = 18;
+  const mn = Math.min(...vals), mx = Math.max(...vals);
+  const rng = mx - mn || 1;
+  const pts = vals.map((v, i) => {
+    const px = 4 + (i / (vals.length - 1)) * (w - 8);
+    const py = (h - 2) - ((v - mn) / rng) * (h - 4);
+    return `${px.toFixed(1)},${py.toFixed(1)}`;
+  }).join(' ');
+  const last = vals[vals.length - 1], prev = vals[vals.length - 2];
+  const col = last > prev ? '#f87171' : '#4ade80';
+  return `<svg class="spark" width="${w}" height="${h}" viewBox="0 0 ${w} ${h}" onclick="openGraph('${hist[0] && hist[0].id || ''}')"><polyline points="${pts}" fill="none" stroke="${col}" stroke-width="1.5"/><circle cx="${pts.split(' ').pop().split(',')[0]}" cy="${pts.split(' ').pop().split(',')[1]}" r="2" fill="${col}"/></svg>`;
+}
+
+// ============== SMART LOGIC ==============
+function isHeatpumpSmart(hist) {
+  if (!hist || hist.length < 2) return { is: false };
+  const byM = Array.from({ length: 12 }, () => []);
+  hist.forEach(h => {
+    if (h.E == null || !h.date) return;
+    const m = h.date.getMonth();
+    byM[m].push(h.E);
+  });
+  const avgM = byM.map(arr => arr.length ? arr.reduce((a,b)=>a+b,0)/arr.length : null);
+  const COLD = [9,10,11,0,1,2,3];
+  const WARM = [4,5,6,7,8];
+  const coldVals = COLD.map(m => avgM[m]).filter(v => v != null);
+  const warmVals = WARM.map(m => avgM[m]).filter(v => v != null);
+  const cA = coldVals.length ? coldVals.reduce((a,b)=>a+b,0)/coldVals.length : 0;
+  const wA = warmVals.length ? warmVals.reduce((a,b)=>a+b,0)/warmVals.length : 0;
+  const allE = hist.map(h => h.E).filter(v => v != null);
+  const allBelow40 = allE.every(v => v < 40);
+  const years = new Set(hist.map(h => h.date ? h.date.getFullYear() : 0)).size;
+
+  // CRITICAL: any value >= 40 can NEVER be heatpump
+  if (allE.some(v => v >= 40)) return { is: false };
+
+  if (wA < 45 && cA > wA * 1.5 && cA > 12 && allBelow40) {
+    return { is: true, reason: `Vinter ${cA.toFixed(0)} vs Sommar ${wA.toFixed(0)} x${(cA/Math.max(wA,1)).toFixed(1)} ${years}y` };
+  }
+
+  if (hist.length >= 4 && allBelow40) {
+    const vals = hist.map(h => h.E).filter(v => v != null);
+    const noJump = vals.every((v, i) => i === 0 || v <= vals[i-1] * 1.8 + 5);
+    const first = vals[0], last = vals[vals.length - 1];
+    if (noJump && last > first * 1.3 && last > 15 && last < 40) {
+      return { is: true, reason: `Gradvis säsong ${first.toFixed(0)}→${last.toFixed(0)}` };
+    }
+  }
+  return { is: false };
+}
+
+function detectNewLevel(hist) {
+  if (!hist || hist.length < 4) return null;
+  const dates = new Set(hist.map(h => h.date ? h.date.toISOString().slice(0,10) : ''));
+  if (dates.size < 2) return null;
+  const vals = hist.map(h => h.E).filter(v => v != null);
+  if (vals.length < 4) return null;
+
+  let best = null;
+  for (let split = 2; split <= vals.length - 2; split++) {
+    const before = vals.slice(0, split);
+    const after = vals.slice(split);
+    const avgB = before.reduce((a,b)=>a+b,0) / before.length;
+    const avgA = after.reduce((a,b)=>a+b,0) / after.length;
+    if (avgB <= 0) continue;
+    const ratio = avgA / avgB;
+    const beforeStable = before.every(v => v <= Math.max(avgB * 1.6, avgB + 8));
+    const afterStable = after.every(v => v >= avgA * 0.55);
+    const tail = after.slice(-3);
+    const tailAvg = tail.reduce((a,b)=>a+b,0) / tail.length;
+    const stillElevated = tailAvg >= avgB * 1.8;
+
+    if (ratio >= 2.5 && avgA >= 15 && beforeStable && afterStable && stillElevated) {
+      const date = hist[split] && hist[split].date ? hist[split].date.toISOString().slice(0,10) : '?';
+      if (!best || ratio > best.ratio) {
+        best = { date, before: avgB, after: avgA, ratio, split };
+      }
+    }
+  }
+  return best;
+}
+
+function classify(m) {
+  const hist = m.history || [];
+  const last = hist[hist.length - 1] || { E: 0, F: 1 };
+  const info = String(m.info || '').toLowerCase();
+
+  if (info.includes('burst') || info.includes('rörbrott')) {
+    return { cat: 'akut', why: 'Rörbrott / BURST-larm' };
+  }
+  if (info.includes('leak') || info.includes('läcka')) {
+    return { cat: 'kund', why: 'Kund LEAK-larm' };
+  }
+  if (info.includes('dry') || info.includes('torr')) {
+    return { cat: 'dry', why: 'Torr mätare (DRY)' };
+  }
+  if (info.includes('reverse') || info.includes('omvänd')) {
+    return { cat: 'reverse', why: 'Omvänt flöde (REVERSE)' };
+  }
+
+  if (hist.length < 2) {
+    const v = last.E || 0, f = last.F || 1;
+    const r = (v / f) - 1;
+    if (r > 10) return { cat: 'bevaka', why: '1 fil, extrem ratio' };
+    if (r > 4) return { cat: 'bevaka', why: '1 fil, hög ratio' };
+    if (v >= 40) return { cat: 'bevaka', why: '1 fil, E≥40 dB' };
+    if (v >= 25) return { cat: 'misstankt', why: '1 fil, E≥25 dB' };
+    return { cat: 'normal', why: '1 fil, låg nivå' };
+  }
+
+  // Heatpump check FIRST (with >=40 guard)
+  const hp = isHeatpumpSmart(hist);
+  if (hp.is) return { cat: 'vp', why: hp.reason };
+
+  const vals = hist.map(h => h.E).filter(v => v != null);
+  const lastE = vals[vals.length - 1] || 0;
+  const rest = vals.slice(0, -1);
+  const restAvg = rest.length ? rest.reduce((a,b)=>a+b,0)/rest.length : 0;
+  const onlyLastHigh = rest.length > 0 && lastE >= restAvg * 2.5 && rest.every(v => v <= restAvg * 1.6);
+
+  const nl = detectNewLevel(hist);
+  const ratio = last.F > 0 ? last.E / last.F : 0;
+  const av = ratio - 1;
+
+  // onlyLastHigh without new level
+  if (onlyLastHigh && !nl) {
+    if (ratio >= 4) return { cat: 'bevaka', why: 'Ny spik senast, vänta 1v' };
+    return { cat: 'temp', why: 'Tillfällig 1-2 dagar' };
+  }
+
+  // New level detection
+  if (nl) {
+    const afterCount = hist.length - nl.split;
+    if (afterCount <= 2) {
+      if (nl.ratio >= 3) return { cat: 'bevaka', why: `Ny nivå ${nl.date} avvakta bekräftelse x${nl.ratio.toFixed(1)}`, nl };
+      return { cat: 'temp', why: `Kort höjning ${nl.date}`, nl };
+    }
+    if (nl.ratio >= 8) return { cat: 'aktiv', why: `Ny nivå ${nl.date} bestående x${nl.ratio.toFixed(1)}`, nl };
+    if (nl.ratio >= 3) return { cat: 'misstankt', why: `Ny nivå ${nl.date} x${nl.ratio.toFixed(1)}`, nl };
+  }
+
+  // Extreme ratios
+  if (ratio >= 11) return { cat: 'aktiv', why: `E/F >1000% (x${ratio.toFixed(1)})` };
+  if (ratio >= 4) return { cat: 'misstankt', why: `E/F >400% (x${ratio.toFixed(1)})` };
+
+  // Återgång (return to quiet)
+  const sorted = [...vals].sort((a,b)=>a-b);
+  const quietHalf = sorted.slice(0, Math.ceil(sorted.length / 2));
+  const baseline = median(quietHalf);
+  const quiet = Math.max(baseline * 1.5, baseline + 8, 18);
+  const maxH = Math.max(...vals);
+  const tail = vals.slice(-2);
+  const highCount = vals.filter(v => v >= baseline * 2.5).length;
+  if (maxH >= baseline * 2.5 && tail.every(v => v <= quiet)) {
+    if (highCount >= 2) return { cat: 'lagad', why: 'Återgått efter lång hög' };
+    return { cat: 'temp', why: 'Tillfällig topp - ej lagad' };
+  }
+
+  // Stabil bakgrund — CRITICAL: mean >= 40 can NEVER be "storing"
+  const mean = vals.reduce((a,b)=>a+b,0) / vals.length;
+  const variance = vals.reduce((a,b)=>a + (b-mean)**2, 0) / vals.length;
+  const cv = mean > 0 ? Math.sqrt(variance) / mean : 0;
+
+  if (mean >= 40) {
+    if (ratio >= 2) return { cat: 'aktiv', why: `Hög stabil >40dB + hög ratio (x${ratio.toFixed(1)})` };
+    if (mean >= 50) return { cat: 'aktiv', why: `Mycket hög stabil >50dB (${mean.toFixed(0)})` };
+    return { cat: 'bevaka', why: `Hög stabil 40-50dB (${mean.toFixed(0)}) - BEVAKA` };
+  }
+
+  if (mean >= 16 && mean < 40 && cv < 0.28 && vals.every(v => v >= 14)) {
+    return { cat: 'storing', why: `Stabil bakgrund <40dB (${mean.toFixed(0)})` };
+  }
+
+  // Current high absolute
+  if (lastE >= 28) return { cat: 'aktiv', why: `Högt akut E=${lastE.toFixed(0)}` };
+  if (lastE >= 16) return { cat: 'misstankt', why: `Förhöjt E=${lastE.toFixed(0)}` };
+
+  return { cat: 'normal', why: 'OK' };
+}
+
+// ============== PARSE ==============
+async function parseExcel(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      try {
+        const data = new Uint8Array(e.target.result);
+        const wb = XLSX.read(data, { type: 'array', cellDates: true });
+        const sheet = wb.Sheets[wb.SheetNames[0]];
+        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: null });
+
+        // Find header row (Adress + Serienummer within first 15)
+        let hdrIdx = -1;
+        let hdr = [];
+        for (let i = 0; i < Math.min(15, rows.length); i++) {
+          const r = rows[i].map(c => String(c || '').toLowerCase());
+          if (r.some(c => c.includes('adress')) && r.some(c => c.includes('serie') || c.includes('serienr') || c.includes('serienummer') || c.includes('meter'))) {
+            hdrIdx = i;
+            hdr = rows[i].map(c => String(c || ''));
+            break;
+          }
+        }
+        if (hdrIdx < 0) {
+          // fallback: assume first non-empty is header-ish
+          for (let i = 0; i < Math.min(10, rows.length); i++) {
+            if (rows[i] && rows[i].some(c => c != null && String(c).trim())) {
+              hdrIdx = i;
+              hdr = rows[i].map(c => String(c || ''));
+              break;
+            }
+          }
+        }
+
+        const fi = (keys) => {
+          for (const k of keys) {
+            const idx = hdr.findIndex(h => h.toLowerCase().includes(k));
+            if (idx >= 0) return idx;
+          }
+          return -1;
+        };
+
+        const ci = {
+          id: fi(['serienummer','serienr','serie','meter id','meterid','id']),
+          addr: fi(['adress','address','gata']),
+          val: fi(['senaste värde','senaste','värde','value','e ','brus','noise','aktuellt']),
+          avg: fi(['genomsnitt','medel','average','avg','f ']),
+          maxv: fi(['max','maximum','högsta']),
+          info: fi(['info','larm','alarm','status','kod']),
+          dateC: fi(['datum','date','tid','timestamp']),
+          areaC: fi(['område','area','ort','kommun'])
+        };
+
+        // Report date from first rows
+        let repDate = null;
+        for (let i = 0; i < Math.min(6, rows.length); i++) {
+          for (const cell of (rows[i] || [])) {
+            const d = extractDate(cell);
+            if (d) { repDate = d; break; }
+          }
+          if (repDate) break;
+        }
+        if (!repDate) repDate = extractDate(file.name) || new Date(file.lastModified);
+
+        const meters = [];
+        for (let i = hdrIdx + 1; i < rows.length; i++) {
+          const row = rows[i];
+          if (!row || !row.length) continue;
+
+          const id = ci.id >= 0 ? String(row[ci.id] || '').trim() : '';
+          const addr = ci.addr >= 0 ? String(row[ci.addr] || '').trim() : '';
+          if (!id && !addr) continue;
+
+          const E = ci.val >= 0 ? parseNum(row[ci.val]) : null;
+          const F = ci.avg >= 0 ? parseNum(row[ci.avg]) : null;
+          const G = ci.maxv >= 0 ? parseNum(row[ci.maxv]) : (E || 0);
+          const info = ci.info >= 0 ? String(row[ci.info] || '') : '';
+          let fDate = ci.dateC >= 0 ? extractDate(row[ci.dateC]) : null;
+
+          // Skip VÄRDEFEL / no signal
+          if (E == null || E === 0) continue;
+          if (String(row[ci.val] || '').toUpperCase().includes('VÄRDEFEL')) continue;
+
+          const area = ci.areaC >= 0 ? String(row[ci.areaC] || '') : areaOf(addr);
+          const d = repDate || fDate || new Date(file.lastModified);
+
+          meters.push({
+            id: id || `row${i}`,
+            adress: addr,
+            E, F: F || E, G: G || E,
+            info, area: areaOf(addr + ' ' + area),
+            street: cleanAddr(addr),
+            d
+          });
+        }
+        resolve({ name: file.name, date: repDate, meters });
+      } catch (err) {
+        reject(err);
+      }
+    };
+    reader.onerror = reject;
+    reader.readAsArrayBuffer(file);
+  });
+}
+
+// ============== ANALYZE ==============
+function analyze() {
+  if (!uploaded.length) return;
+  uploaded.sort((a,b) => a.date - b.date);
+
+  const mapM = new Map();
+  for (const file of uploaded) {
+    for (const m of file.meters) {
+      if (!mapM.has(m.id)) {
+        mapM.set(m.id, {
+          id: m.id,
+          adress: m.adress,
+          area: m.area,
+          street: m.street,
+          history: [],
+          info: m.info
+        });
+      }
+      const entry = mapM.get(m.id);
+      entry.history.push({ date: m.d, E: m.E, F: m.F, G: m.G, id: m.id });
+      if (m.info) entry.info = m.info;
+      if (m.adress) entry.adress = m.adress;
+      if (m.area) entry.area = m.area;
+    }
+  }
+
+  results = [];
+  for (const [id, entry] of mapM) {
+    const hist = entry.history.sort((a,b) => a.date - b.date);
+    // dedupe same date keep last
+    const byDay = new Map();
+    hist.forEach(h => {
+      const k = h.date ? h.date.toISOString().slice(0,10) : 'x';
+      byDay.set(k, h);
+    });
+    const cleanHist = [...byDay.values()].sort((a,b) => a.date - b.date);
+    if (!cleanHist.length) continue;
+
+    const last = cleanHist[cleanHist.length - 1];
+    const first = cleanHist[0];
+    const av = last.F > 0 ? (last.E / last.F) - 1 : 0;
+    const ratio = last.F > 0 ? last.E / last.F : 0;
+
+    let cls;
+    if (userCats.has(id)) {
+      cls = { cat: userCats.get(id), why: 'Manuell' };
+    } else {
+      cls = classify({ history: cleanHist, info: entry.info });
+    }
+
+    const conf = cleanHist.length >= 4 ? 'H' : cleanHist.length >= 2 ? 'M' : 'L';
+
+    results.push({
+      id,
+      adress: entry.adress,
+      area: entry.area,
+      street: entry.street,
+      history: cleanHist,
+      E: last.E,
+      F: last.F,
+      G: last.G || last.E,
+      av: av * 100,
+      ratio,
+      cat: cls.cat,
+      why: cls.why,
+      nl: cls.nl || null,
+      info: entry.info,
+      conf,
+      memo: memos.get(id) || ''
+    });
+  }
+
+  // Init catChecks to ALL true after first analyze (BUG A FIX)
+  if (catChecks.size === 0) {
+    const allCats = new Set(results.map(r => r.cat));
+    allCats.forEach(c => catChecks.set(c, true));
+    // ensure known ones
+    Object.keys(CATS).forEach(c => { if (!catChecks.has(c)) catChecks.set(c, true); });
+  }
+
+  buildFilters();
+  render();
+}
+
+// ============== FILTERS ==============
+function buildFilters() {
+  const cats = new Set(results.map(r => r.cat));
+  const areas = new Set(results.map(r => r.area));
+
+  const fCats = document.getElementById('fCats');
+  fCats.innerHTML = '';
+  const order = ['akut','aktiv','bevaka','misstankt','vp','temp','lagad','storing','normal','kund','dry','reverse'];
+  order.forEach(c => {
+    if (!cats.has(c) && !CATS[c]) return;
+    const on = catChecks.get(c) !== false;
+    const ch = document.createElement('span');
+    ch.className = 'chip' + (on ? ' on' : '');
+    ch.textContent = CATS[c] ? CATS[c].label : c;
+    ch.onclick = () => toggleCat(c);
+    fCats.appendChild(ch);
+  });
+
+  // conf
+  const fConf = document.getElementById('fConf');
+  fConf.innerHTML = '';
+  ['H','M','L'].forEach(c => {
+    const on = confFilter.has(c);
+    const ch = document.createElement('span');
+    ch.className = 'chip' + (on ? ' on' : '');
+    ch.textContent = c === 'H' ? 'HÖG 4+' : c === 'M' ? 'MEDEL 2-3' : 'LÅG 1 fil';
+    ch.onclick = () => toggleConf(c);
+    fConf.appendChild(ch);
+  });
+
+  // area
+  const fArea = document.getElementById('fArea');
+  fArea.innerHTML = '';
+  AREAS.forEach(a => {
+    if (!areas.has(a) && a !== 'ÖVRIGT') return;
+    const on = areaFilter.size === 0 || areaFilter.has(a);
+    const ch = document.createElement('span');
+    ch.className = 'chip' + (on ? ' on' : '');
+    ch.textContent = a;
+    ch.onclick = () => toggleArea(a);
+    fArea.appendChild(ch);
+  });
+}
+
+function toggleCat(c) {
+  const cur = catChecks.get(c) !== false;
+  catChecks.set(c, !cur);
+  render();
+  buildFilters();
+}
+
+function toggleConf(c) {
+  if (confFilter.has(c)) confFilter.delete(c);
+  else confFilter.add(c);
+  if (confFilter.size === 0) confFilter = new Set(['H','M','L']);
+  render();
+  buildFilters();
+}
+
+function toggleArea(a) {
+  if (areaFilter.size === 0) {
+    // first click: select only this
+    areaFilter = new Set([a]);
+  } else if (areaFilter.has(a)) {
+    areaFilter.delete(a);
+    if (areaFilter.size === 0) areaFilter = new Set(); // all
+  } else {
+    areaFilter.add(a);
+  }
+  render();
+  buildFilters();
+}
+
+// ============== RENDER ==============
+function render() {
+  const q = (document.getElementById('q').value || '').toLowerCase().trim();
+
+  let filtered = results.filter(r => {
+    if (ignored.has(r.id)) return false;
+    if (!confFilter.has(r.conf)) return false;
+    if (areaFilter.size > 0 && !areaFilter.has(r.area)) return false;
+
+    // activeFilter logic (BUG A FIX: default all shown)
+    if (activeFilter === 'dolda') {
+      if (!['vp','lagad','kund','storing','temp','normal','dry','reverse'].includes(r.cat)) return false;
+    } else if (activeFilter === 'aktiv') {
+      if (!['akut','aktiv'].includes(r.cat)) return false;
+    } else if (activeFilter === 'bevaka') {
+      if (r.cat !== 'bevaka') return false;
+    } else if (activeFilter === 'misstankt') {
+      if (r.cat !== 'misstankt') return false;
+    } else if (activeFilter === 'vp') {
+      if (r.cat !== 'vp') return false;
+    } else {
+      // 'all' — respect catChecks
+      if (catChecks.get(r.cat) === false) return false;
+    }
+
+    if (q) {
+      const hay = (r.adress + ' ' + r.id + ' ' + r.street + ' ' + r.area).toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
+
+  filtered.sort((a,b) => b.av - a.av);
+
+  // Stats (always from full results, not filtered — BUG A FIX)
+  const akut = results.filter(r => ['akut','aktiv'].includes(r.cat) && !ignored.has(r.id));
+  const bevaka = results.filter(r => r.cat === 'bevaka' && !ignored.has(r.id));
+  const misst = results.filter(r => r.cat === 'misstankt' && !ignored.has(r.id));
+  const vp = results.filter(r => r.cat === 'vp' && !ignored.has(r.id));
+  const dolda = results.filter(r => ['vp','lagad','kund','storing','temp','normal','dry','reverse'].includes(r.cat) && !ignored.has(r.id));
+  const totalSkarpa = akut.length + bevaka.length + misst.length;
+
+  const stats = document.getElementById('stats');
+  stats.innerHTML = `
+    <div class="stat s-all ${activeFilter==='all'?'active':''}" data-f="all" onclick="setF('all')"><div class="num">${totalSkarpa}</div><div class="lbl">Skarpa mätare</div></div>
+    <div class="stat s-aktiv ${activeFilter==='aktiv'?'active':''}" data-f="aktiv" onclick="setF('aktiv')"><div class="num">${akut.length}</div><div class="lbl">Aktiva läckor</div></div>
+    <div class="stat s-bevaka ${activeFilter==='bevaka'?'active':''}" data-f="bevaka" onclick="setF('bevaka')"><div class="num">${bevaka.length}</div><div class="lbl">Bevaka hög misstanke</div></div>
+    <div class="stat s-misst ${activeFilter==='misstankt'?'active':''}" data-f="misstankt" onclick="setF('misstankt')"><div class="num">${misst.length}</div><div class="lbl">Misstänkta</div></div>
+    <div class="stat s-vp ${activeFilter==='vp'?'active':''}" data-f="vp" onclick="setF('vp')"><div class="num">${vp.length}</div><div class="lbl">Värmepump (säsong)</div></div>
+    <div class="stat s-dolda ${activeFilter==='dolda'?'active':''}" data-f="dolda" onclick="setF('dolda')"><div class="num">${dolda.length}</div><div class="lbl">Dolda / Lagade</div></div>
+  `;
+
+  // Tables
+  const tb = document.querySelector('#tb tbody');
+  const tbBevaka = document.querySelector('#tbBevaka tbody');
+  const tbNoise = document.querySelector('#tbNoise tbody');
+  tb.innerHTML = '';
+  tbBevaka.innerHTML = '';
+  tbNoise.innerHTML = '';
+
+  let nBevaka = 0, nNoise = 0, nMain = 0;
+
+  for (const r of filtered) {
+    const pct = r.av.toFixed(0);
+    const badge = `<span class="badge badge-${r.cat}">${CATS[r.cat] ? CATS[r.cat].label : r.cat}</span>`;
+    const confB = `<span class="conf conf-${r.conf}">${r.conf}</span>`;
+    const spark = sparkline(r.history.map(h => ({ ...h, id: r.id })));
+    const memoH = r.memo ? `<span class="memo-tag" onclick="editMemo('${r.id}')">${r.memo.slice(0,20)}</span>` : `<span class="memo-tag" onclick="editMemo('${r.id}')">+memo</span>`;
+    const nlH = r.nl ? `<div class="nl-box">Ny nivå ${r.nl.date}: ${r.nl.before.toFixed(0)}→${r.nl.after.toFixed(0)} x${r.nl.ratio.toFixed(1)}</div>` : '';
+    const starOn = starred.has(r.id) ? 'on' : '';
+    const star = `<span class="star ${starOn}" onclick="toggleStar('${r.id}')">${starred.has(r.id)?'⭐':'☆'}</span>`;
+    const copyBtn = `<button class="copy-btn" onclick="copyAddr(this,'${(r.adress||'').replace(/'/g,"\\'")}')" title="Kopiera adress">📋</button>`;
+    const catSel = `<select class="cat-sel" onchange="setCat('${r.id}',this.value)">
+      ${Object.keys(CATS).map(c => `<option value="${c}" ${r.cat===c?'selected':''}>${CATS[c].label}</option>`).join('')}
+    </select>`;
+
+    const tr = document.createElement('tr');
+    tr.className = `row-${r.cat}`;
+    tr.innerHTML = `
+      <td>${star}</td>
+      <td>${catSel}</td>
+      <td><b>${r.adress || '—'}</b> ${confB} ${copyBtn}<div class="why">${r.why}</div>${nlH}${memoH}</td>
+      <td><code style="font-size:10px">${r.id}</code></td>
+      <td>${r.area}</td>
+      <td><b>${r.E != null ? r.E.toFixed(0) : '—'}</b></td>
+      <td>${r.F != null ? r.F.toFixed(0) : '—'}</td>
+      <td>${pct}%</td>
+      <td>x${r.ratio.toFixed(1)}</td>
+      <td>${r.G != null ? r.G.toFixed(0) : '—'}</td>
+      <td onclick="openGraph('${r.id}')">${spark}</td>
+    `;
+
+    if (r.cat === 'bevaka') {
+      tbBevaka.appendChild(tr);
+      nBevaka++;
+    } else if (['vp','lagad','kund','storing','temp','normal','dry','reverse'].includes(r.cat)) {
+      tbNoise.appendChild(tr);
+      nNoise++;
+    } else {
+      tb.appendChild(tr);
+      nMain++;
+    }
+  }
+
+  document.getElementById('secBevaka').style.display = nBevaka ? 'block' : 'none';
+  document.getElementById('tbBevaka').style.display = nBevaka ? 'table' : 'none';
+  document.getElementById('secNoise').style.display = nNoise ? 'block' : 'none';
+  document.getElementById('tbNoise').style.display = nNoise ? 'table' : 'none';
+  document.getElementById('secMain').style.display = nMain || (!nBevaka && !nNoise) ? 'block' : 'none';
+  document.getElementById('tb').style.display = nMain || (!nBevaka && !nNoise) ? 'table' : 'none';
+
+  // Range label
+  if (uploaded.length) {
+    const d0 = uploaded[0].date;
+    const d1 = uploaded[uploaded.length - 1].date;
+    const fmt = d => d ? d.toISOString().slice(0,10) : '?';
+    document.getElementById('rangeLabel').textContent =
+      `${fmt(d0)} → ${fmt(d1)} (${uploaded.length} filer) — Dra slider för att jämföra som Kamstrup`;
+  }
+}
+
+function setF(f) {
+  activeFilter = f;
+  render();
+}
+
+function setCat(id, cat) {
+  userCats.set(id, cat);
+  const r = results.find(x => x.id === id);
+  if (r) { r.cat = cat; r.why = 'Manuell'; }
+  render();
+}
+
+function toggleStar(id) {
+  if (starred.has(id)) starred.delete(id);
+  else starred.add(id);
+  render();
+}
+
+function editMemo(id) {
+  const cur = memos.get(id) || '';
+  const v = prompt('Memo / anteckning:', cur);
+  if (v !== null) {
+    if (v) memos.set(id, v);
+    else memos.delete(id);
+    const r = results.find(x => x.id === id);
+    if (r) r.memo = v || '';
+    render();
+  }
+}
+
+function copyAddr(btn, addr) {
+  navigator.clipboard.writeText(addr).then(() => {
+    btn.textContent = '✓';
+    setTimeout(() => { btn.textContent = '📋'; }, 800);
+  });
+}
+
+// ============== GRAPH (BUG B FIX) ==============
+function openGraph(id) {
+  const r = results.find(x => x.id === id);
+  if (!r) return;
+
+  document.getElementById('gT').textContent = `${r.adress} (${r.id})`;
+  document.getElementById('gModal').style.display = 'flex';
+
+  if (chartInst) { chartInst.destroy(); chartInst = null; }
+
+  const total = r.history.length;
+  let fromPct = parseInt(document.getElementById('rFrom').value) || 0;
+  let toPct = parseInt(document.getElementById('rTo').value) || 100;
+  if (fromPct > toPct) { const t = fromPct; fromPct = toPct; toPct = t; }
+
+  let fromIdx = Math.floor((fromPct / 100) * (total - 1));
+  let toIdx = Math.floor((toPct / 100) * (total - 1));
+  // BUG B FIX: if full range, show ALL
+  if (fromPct === 0 && toPct === 100) {
+    fromIdx = 0;
+    toIdx = total - 1;
+  }
+  let slice = r.history.slice(fromIdx, toIdx + 1);
+  if (!slice.length) slice = r.history;
+
+  const ctx = document.getElementById('gChart').getContext('2d');
+  chartInst = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: slice.map(h => h.date ? h.date.toISOString().slice(0,10) : '?'),
+      datasets: [
+        {
+          label: 'Brus E',
+          data: slice.map(h => h.E),
+          borderColor: '#1db954',
+          backgroundColor: 'rgba(29,185,84,.08)',
+          tension: 0.25,
+          pointRadius: 4,
+          fill: true
+        },
+        {
+          label: 'Genomsnitt F',
+          data: slice.map(h => h.F),
+          borderColor: '#38bdf8',
+          borderDash: [4, 3],
+          tension: 0.25,
+          pointRadius: 3,
+          fill: false
+        }
+      ]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        legend: { labels: { color: '#fff', font: { size: 10 } } }
+      },
+      scales: {
+        x: { ticks: { color: '#aaa', font: { size: 9 } }, grid: { color: '#222' } },
+        y: { ticks: { color: '#aaa', font: { size: 9 } }, grid: { color: '#222' } }
+      }
+    }
+  });
+
+  const years = [...new Set(r.history.map(h => h.date ? h.date.getFullYear() : 0))].filter(Boolean);
+  const hp = isHeatpumpSmart(r.history);
+  document.getElementById('gMeta').innerHTML = `
+    <b>Konfidens:</b> ${r.conf} (${r.history.length} filer) &nbsp;|&nbsp;
+    <b>Värmepump:</b> ${hp.is ? 'JA — ' + hp.reason : 'NEJ'} &nbsp;|&nbsp;
+    <b>År:</b> ${years.join(', ')} &nbsp;|&nbsp;
+    <b>Visar:</b> ${slice.length}/${total} punkter<br>
+    <b>Klass:</b> ${CATS[r.cat] ? CATS[r.cat].label : r.cat} — ${r.why}
+  `;
+  document.getElementById('gInfo').innerHTML =
+    `E=<b>${r.E != null ? r.E.toFixed(0) : '—'}</b> &nbsp; F=<b>${r.F != null ? r.F.toFixed(0) : '—'}</b> &nbsp; ratio <b>x${r.ratio.toFixed(1)}</b> &nbsp; (${r.av.toFixed(0)}%)`;
+}
+
+// ============== MAP ==============
+function openMap() {
+  document.getElementById('mModal').style.display = 'flex';
+  setTimeout(() => {
+    if (!map) {
+      map = L.map('map').setView([59.25, 17.85], 11);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OSM'
+      }).addTo(map);
+    }
+    map.invalidateSize();
+
+    markers.forEach(m => map.removeLayer(m));
+    markers = [];
+
+    const toPlot = results
+      .filter(r => ['akut','aktiv','bevaka','misstankt'].includes(r.cat) && !ignored.has(r.id))
+      .slice(0, 80);
+
+    document.getElementById('mStatus').textContent = `Visar ${toPlot.length} högriskmätare (slumpade koordinater i Botkyrka-området)`;
+
+    toPlot.forEach(r => {
+      const lat = 59.20 + Math.random() * 0.15;
+      const lng = 17.70 + Math.random() * 0.30;
+      const col = CATS[r.cat] ? CATS[r.cat].bg : '#888';
+      const m = L.circleMarker([lat, lng], {
+        radius: 8,
+        fillColor: col,
+        color: '#fff',
+        weight: 2,
+        fillOpacity: 0.9
+      }).addTo(map);
+      m.bindPopup(`<b>${r.adress}</b><br>${CATS[r.cat] ? CATS[r.cat].label : r.cat}<br>E=${r.E} x${r.ratio.toFixed(1)}<br>${r.id}`);
+      markers.push(m);
+    });
+  }, 80);
+}
+
+// ============== FILES ==============
+async function handleFiles(files) {
+  for (const file of files) {
+    const name = file.name.toLowerCase();
+    if (!name.endsWith('.xlsx') && !name.endsWith('.xls') && !name.endsWith('.csv')) continue;
+    try {
+      const parsed = await parseExcel(file);
+      // avoid exact same name+date
+      if (!uploaded.some(u => u.name === parsed.name && u.date.getTime() === parsed.date.getTime())) {
+        uploaded.push(parsed);
+      }
+    } catch (err) {
+      console.error('Parse fail', file.name, err);
+      alert('Kunde inte läsa ' + file.name + ': ' + err.message);
+    }
+  }
+  uploaded.sort((a,b) => a.date - b.date);
+  const fi = document.getElementById('fileInfo');
+  if (uploaded.length) {
+    const d0 = uploaded[0].date.toISOString().slice(0,10);
+    const d1 = uploaded[uploaded.length-1].date.toISOString().slice(0,10);
+    const years = [...new Set(uploaded.map(u => u.date.getFullYear()))];
+    fi.textContent = `${uploaded.length} filer: ${d0} → ${d1} (${years.join(',')})`;
+  } else {
+    fi.textContent = 'Inga filer laddade';
+  }
+  analyze();
+}
+
+// ============== EXPORT ==============
+function exportXlsx() {
+  if (!results.length) { alert('Inget att exportera'); return; }
+  const data = results.map(r => ({
+    Adress: r.adress,
+    Serienr: r.id,
+    Område: r.area,
+    E: r.E,
+    F: r.F,
+    Avvikelse_pct: Math.round(r.av),
+    Ratio: +r.ratio.toFixed(2),
+    Max: r.G,
+    Klass: CATS[r.cat] ? CATS[r.cat].label : r.cat,
+    Why: r.why,
+    Info: r.info,
+    Memo: r.memo || '',
+    Konfidens: r.conf,
+    Filer: r.history.length
+  }));
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'LackProGrok');
+  const d = new Date().toISOString().slice(0,10);
+  XLSX.writeFile(wb, `Karma_LackProGrok_v9_${d}.xlsx`);
+}
+
+// ============== EVENTS ==============
+document.getElementById('upBtn').onclick = () => document.getElementById('fileIn').click();
+document.getElementById('fileIn').onchange = (e) => handleFiles(e.target.files);
+document.getElementById('anBtn').onclick = () => analyze();
+document.getElementById('expBtn').onclick = exportXlsx;
+document.getElementById('mapBtn').onclick = openMap;
+document.getElementById('clrBtn').onclick = () => {
+  uploaded = [];
+  results = [];
+  catChecks.clear();
+  userCats.clear();
+  document.getElementById('fileInfo').textContent = 'Inga filer laddade';
+  render();
+};
+document.getElementById('q').oninput = () => render();
+
+const drop = document.getElementById('drop');
+drop.ondragover = (e) => { e.preventDefault(); drop.classList.add('drag'); };
+drop.ondragleave = () => drop.classList.remove('drag');
+drop.ondrop = (e) => {
+  e.preventDefault();
+  drop.classList.remove('drag');
+  handleFiles(e.dataTransfer.files);
+};
+
+document.getElementById('rFrom').oninput = () => {
+  if (uploaded.length) {
+    const d0 = uploaded[0].date.toISOString().slice(0,10);
+    const d1 = uploaded[uploaded.length-1].date.toISOString().slice(0,10);
+    const fp = document.getElementById('rFrom').value;
+    const tp = document.getElementById('rTo').value;
+    document.getElementById('rangeLabel').textContent =
+      `${d0} → ${d1} (${uploaded.length} filer) — Slider ${fp}%→${tp}%`;
+  }
+  // if graph open, refresh
+  const modal = document.getElementById('gModal');
+  if (modal.style.display === 'flex' && chartInst) {
+    // re-open current if possible — skip for simplicity
+  }
+};
+document.getElementById('rTo').oninput = document.getElementById('rFrom').oninput;
+
+// Initial empty render
+render();
+</script>
+</body>
+</html>
